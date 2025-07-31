@@ -1,23 +1,34 @@
 import { Box } from "@mui/material";
-import { useRouter } from "next/router";
 import { Dispatch, SetStateAction } from "react";
 
 import { useData } from "@/context/DataContext";
 
+import { innerDrawerHeights } from "../layouts/HalfMapLayout/HalfMapLayout";
 import { timeRangeSelect } from "./CandidateListFilters";
 
 type Props = {
   tabValue: number;
   setTabValue: Dispatch<SetStateAction<number>>;
+  setInnerDrawerHeight: Dispatch<SetStateAction<string>>;
+  innerDrawerHeight: string;
   // masterPlayerTimeRef: MutableRefObject<number>;
 };
 
-export function MobileTabs({ tabValue, setTabValue }: Props) {
-  const router = useRouter();
+export function MobileTabs({
+  tabValue,
+  setTabValue,
+  setInnerDrawerHeight,
+  innerDrawerHeight,
+}: Props) {
   const handleChange = (event: React.MouseEvent<HTMLDivElement>) => {
     const indexNumber = Number(event.currentTarget.id);
     setTabValue(indexNumber);
-    router.push(listenLiveTabs[indexNumber].slug);
+
+    if (innerDrawerHeight === innerDrawerHeights.min) {
+      setInnerDrawerHeight(innerDrawerHeights.low);
+    } else if (innerDrawerHeight === innerDrawerHeights.low) {
+      setInnerDrawerHeight(innerDrawerHeights.max);
+    }
   };
 
   const { filters } = useData();
@@ -31,8 +42,8 @@ export function MobileTabs({ tabValue, setTabValue }: Props) {
   };
 
   const listenLiveTabs = [
-    { title: "Listen Live", slug: "/beta/hydrophones" },
     { title: timeRange, slug: "/beta/candidates" },
+    { title: "Listen Live", slug: "/beta/hydrophones" },
   ];
 
   const makeTabs = (array: TabsType[]) => {
@@ -46,6 +57,7 @@ export function MobileTabs({ tabValue, setTabValue }: Props) {
           gap: "1rem",
           borderBottom: "1px solid rgba(255,255,255,.3)",
           minHeight: "48px",
+          mt: "24px",
         }}
       >
         {array.map((tab: TabsType, index: number) => {
@@ -59,11 +71,14 @@ export function MobileTabs({ tabValue, setTabValue }: Props) {
                 borderBottom: index === tabValue ? "1.5px solid #fff" : "none",
                 flex: 1,
                 textAlign: "center",
-                py: 1,
+                pb: 1,
+                pt: 0.5,
+                fontSize: "1.2rem",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "center",
+                justifyContent: "flex-start",
+
                 color:
                   index === tabValue
                     ? "rgba(255,255,255,1)"

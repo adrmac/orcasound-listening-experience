@@ -1,6 +1,6 @@
 import { Box, Tab, Tabs, Theme, useMediaQuery } from "@mui/material";
 import { useRouter } from "next/router";
-import React, { ReactElement, useRef } from "react";
+import React, { ReactElement, useRef, useState } from "react";
 
 import { CandidatesStack } from "@/components/CandidateList/CandidatesStack";
 import { MobileDisplay } from "@/components/CandidateList/MobileDisplay";
@@ -8,7 +8,6 @@ import HeaderNew from "@/components/HeaderNew";
 import { useLayout } from "@/context/LayoutContext";
 
 import { MasterDataLayout } from "../MasterDataLayout";
-import Footer from "./Footer";
 import { MapWrapper } from "./MapWrapper";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { SideList } from "./SideList";
@@ -19,6 +18,13 @@ type HalfMapLayoutProps = {
   rightSlot?: React.ReactNode;
   rightDrawer?: React.ReactNode;
   children?: React.ReactNode;
+};
+
+export const innerDrawerHeights = {
+  min: "calc(100% - 72px)",
+  low: "calc(100% - 267px)",
+  high: "72px",
+  max: "0px",
 };
 
 export function HalfMapLayout({
@@ -33,6 +39,10 @@ export function HalfMapLayout({
   const mdDown = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
 
   const masterPlayerTimeRef = useRef(0);
+
+  const [innerDrawerHeight, setInnerDrawerHeight] = useState(
+    innerDrawerHeights.min,
+  );
 
   function a11yProps(index: number) {
     return {
@@ -133,6 +143,7 @@ export function HalfMapLayout({
               flexGrow: 1,
               position: "relative",
               borderLeft: "1px solid rgba(255,255,255,.5)",
+              height: "100%",
             }}
           >
             <MapWrapper />
@@ -203,19 +214,59 @@ export function HalfMapLayout({
                 flexDirection: "column",
                 flex: 1,
                 overflowY: "auto",
+                position: "absolute",
+                top: innerDrawerHeight,
+                zIndex: 1000,
+                backgroundColor: "background.default",
+                width: "100%",
+                borderRadius:
+                  innerDrawerHeight === innerDrawerHeights.max ? 0 : "24px",
+                margin: "0 1px",
+                height: "100%",
+                transition: "all .66s ease",
               }}
             >
-              {!!router.query.feedSlug || !!router.query.candidateId ? (
-                children
-              ) : (
-                <MobileDisplay masterPlayerTimeRef={masterPlayerTimeRef} />
-              )}
+              <div
+                className="drawer-toggle"
+                onClick={() => {
+                  if (innerDrawerHeight === innerDrawerHeights.min) {
+                    setInnerDrawerHeight(innerDrawerHeights.low);
+                  } else if (innerDrawerHeight === innerDrawerHeights.low) {
+                    setInnerDrawerHeight(innerDrawerHeights.max);
+                  } else if (innerDrawerHeight === innerDrawerHeights.max) {
+                    setInnerDrawerHeight(innerDrawerHeights.min);
+                  }
+                }}
+                style={{
+                  width: "100%",
+                  height: "24px",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    width: "40px",
+                    height: "4px",
+                    background: "white",
+                    borderRadius: "100px",
+                  }}
+                ></div>
+              </div>
+              <MobileDisplay
+                masterPlayerTimeRef={masterPlayerTimeRef}
+                setInnerDrawerHeight={setInnerDrawerHeight}
+                innerDrawerHeight={innerDrawerHeight}
+              />
             </Box>
           )}
         </Box>
-
-        <Footer masterPlayerTimeRef={masterPlayerTimeRef} />
-
+        {/* <Footer masterPlayerTimeRef={masterPlayerTimeRef} /> */}
         {mdDown && <MobileBottomNav />}
       </Box>
     </>

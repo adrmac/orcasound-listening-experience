@@ -83,12 +83,12 @@ export const CandidatesStack = ({
       maxWidth="xl"
       disableGutters
       sx={{
-        px: 2,
+        px: { xs: 1, sm: 2, md: 3 },
         pb: "200px",
-        mt: showChart ? 2 : 3,
+        mt: mdDown ? 1 : 2,
       }}
     >
-      {!showChart && (
+      {!mdDown && (
         <Box mb={2}>
           <Typography component="h2" variant="h5" mb={1}>
             Recordings

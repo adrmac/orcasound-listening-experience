@@ -1,4 +1,4 @@
-import { Earbuds, Map, Mic, Public } from "@mui/icons-material";
+import { Earbuds, Mic, Public } from "@mui/icons-material";
 import { BottomNavigation, BottomNavigationAction } from "@mui/material";
 import { useRouter } from "next/router";
 import React from "react";
@@ -21,7 +21,8 @@ export function MobileBottomNav() {
       }}
       sx={{
         minHeight: "69px",
-        backgroundColor: "background.paper",
+        px: "16px",
+        backgroundColor: "primary",
         "& .MuiBottomNavigationAction-root": {
           color: "text.secondary",
           "& .MuiSvgIcon-root": {
@@ -37,17 +38,9 @@ export function MobileBottomNav() {
       }}
     >
       <BottomNavigationAction
-        label="Map"
-        icon={<Map />}
-        onClick={() => {
-          router.push("/beta");
-          setNowPlayingCandidate(null);
-        }}
-      />
-      <BottomNavigationAction
         label="Hydrophones"
         icon={<Mic />}
-        onClick={() => router.push("/beta/hydrophones")}
+        onClick={() => router.push("/beta")}
       />
       <BottomNavigationAction label="Explore" icon={<Earbuds />} />
       <BottomNavigationAction label="Take Action" icon={<Public />} />
