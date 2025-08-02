@@ -19,7 +19,7 @@ export const DetectionsList = ({ candidate }: { candidate: Candidate }) => {
         <ListItemButton
           key={index}
           sx={{
-            px: 0,
+            px: "24px",
             borderTop: index !== 0 ? "1px solid rgba(255,255,255,.25)" : "none",
           }}
         >

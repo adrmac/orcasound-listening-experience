@@ -1,6 +1,8 @@
 import { BookmarkBorder, ChatBubbleOutline } from "@mui/icons-material";
 import { Box, Button } from "@mui/material";
 
+import darkTheme from "@/styles/darkTheme";
+
 const upvote = (
   <svg
     width="17"
@@ -49,7 +51,15 @@ const shareIcon = (
   </svg>
 );
 
-export default function CommunityBar({ votes }: { votes: number }) {
+export default function CommunityBar({
+  votes,
+  audioUrl,
+  clipId,
+}: {
+  votes: number;
+  audioUrl?: string;
+  clipId?: string;
+}) {
   return (
     <Box
       className="community-bar"
@@ -149,6 +159,25 @@ export default function CommunityBar({ votes }: { votes: number }) {
         </div>
         Share
       </Button>
+      {audioUrl && (
+        <Button
+          variant="contained"
+          href={audioUrl ?? ""}
+          download={`clip-${clipId}.mp3`}
+          sx={{
+            borderRadius: 100,
+            p: "6px 16px",
+            display: "flex",
+            gap: "8px",
+            lineHeight: 1,
+            minWidth: 0,
+            minHeight: "34px",
+            background: darkTheme.palette.accent3.main,
+          }}
+        >
+          Download
+        </Button>
+      )}
     </Box>
   );
 }

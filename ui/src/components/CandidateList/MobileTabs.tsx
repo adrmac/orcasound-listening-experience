@@ -2,24 +2,21 @@ import { Box } from "@mui/material";
 import { Dispatch, SetStateAction } from "react";
 
 import { useData } from "@/context/DataContext";
+import { useLayout } from "@/context/LayoutContext";
+import darkTheme from "@/styles/darkTheme";
 
-import { innerDrawerHeights } from "../layouts/HalfMapLayout/HalfMapLayout";
 import { timeRangeSelect } from "./CandidateListFilters";
 
 type Props = {
   tabValue: number;
   setTabValue: Dispatch<SetStateAction<number>>;
-  setInnerDrawerHeight: Dispatch<SetStateAction<string>>;
-  innerDrawerHeight: string;
   // masterPlayerTimeRef: MutableRefObject<number>;
 };
 
-export function MobileTabs({
-  tabValue,
-  setTabValue,
-  setInnerDrawerHeight,
-  innerDrawerHeight,
-}: Props) {
+export function MobileTabs({ tabValue, setTabValue }: Props) {
+  const { innerDrawerHeights, innerDrawerHeight, setInnerDrawerHeight } =
+    useLayout();
+
   const handleChange = (event: React.MouseEvent<HTMLDivElement>) => {
     const indexNumber = Number(event.currentTarget.id);
     setTabValue(indexNumber);
@@ -58,6 +55,7 @@ export function MobileTabs({
           borderBottom: "1px solid rgba(255,255,255,.3)",
           minHeight: "48px",
           mt: "24px",
+          backgroundColor: darkTheme.palette.background.default,
         }}
       >
         {array.map((tab: TabsType, index: number) => {
@@ -72,7 +70,7 @@ export function MobileTabs({
                 flex: 1,
                 textAlign: "center",
                 pb: 1,
-                pt: 0.5,
+                pt: 0.25,
                 fontSize: "1.2rem",
                 height: "100%",
                 display: "flex",

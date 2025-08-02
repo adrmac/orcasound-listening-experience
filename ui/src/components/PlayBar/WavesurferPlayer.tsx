@@ -1,4 +1,5 @@
 import { PauseCircle, PlayCircle } from "@mui/icons-material";
+import { Theme, useMediaQuery } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import Spectrogram from "wavesurfer.js/dist/plugins/spectrogram.js";
@@ -15,6 +16,7 @@ export default function WavesurferPlayer({ audioUrl }: WaveformPlayerProps) {
   // const containerRef = useRef<HTMLDivElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const mdDown = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
 
   const [zoomLevel, setZoomLevel] = useState<number>(0); // pixels per second
 
@@ -55,7 +57,7 @@ export default function WavesurferPlayer({ audioUrl }: WaveformPlayerProps) {
           Spectrogram.create({
             container: spectrogramRef.current,
             labels: true,
-            height: 600,
+            height: mdDown ? 300 : 600,
             scale: "linear",
             fftSamples: 1024,
           }),

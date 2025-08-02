@@ -1,11 +1,21 @@
-import { Box, Tab, Tabs, Theme, useMediaQuery } from "@mui/material";
+import { Close } from "@mui/icons-material";
+import {
+  Box,
+  IconButton,
+  Tab,
+  Tabs,
+  Theme,
+  useMediaQuery,
+} from "@mui/material";
 import { useRouter } from "next/router";
-import React, { ReactElement, useRef, useState } from "react";
+import React, { ReactElement, useRef } from "react";
 
 import { CandidatesStack } from "@/components/CandidateList/CandidatesStack";
-import { MobileDisplay } from "@/components/CandidateList/MobileDisplay";
+import { MobileStack } from "@/components/CandidateList/MobileStack";
 import HeaderNew from "@/components/HeaderNew";
 import { useLayout } from "@/context/LayoutContext";
+import { useNowPlaying } from "@/context/NowPlayingContext";
+import darkTheme from "@/styles/darkTheme";
 
 import { MasterDataLayout } from "../MasterDataLayout";
 import { MapWrapper } from "./MapWrapper";
@@ -14,35 +24,39 @@ import { SideList } from "./SideList";
 
 type HalfMapLayoutProps = {
   // leftSlot?: React.ReactNode;
-  centerSlot?: React.ReactNode;
+  centerDrawer?: React.ReactNode;
   rightSlot?: React.ReactNode;
   rightDrawer?: React.ReactNode;
+  outerDrawer?: React.ReactNode;
+  innerDrawer?: React.ReactNode;
   children?: React.ReactNode;
-};
-
-export const innerDrawerHeights = {
-  min: "calc(100% - 72px)",
-  low: "calc(100% - 267px)",
-  high: "72px",
-  max: "0px",
 };
 
 export function HalfMapLayout({
   // leftSlot,
-  centerSlot,
+  centerDrawer,
   rightSlot,
   rightDrawer,
+  outerDrawer,
+  innerDrawer,
   children,
 }: HalfMapLayoutProps) {
   const router = useRouter();
-  const { playbarExpanded, headerHeight } = useLayout();
+  const { playbarExpanded, headerHeight, setLiveSpectrogram } = useLayout();
   const mdDown = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
 
   const masterPlayerTimeRef = useRef(0);
 
-  const [innerDrawerHeight, setInnerDrawerHeight] = useState(
-    innerDrawerHeights.min,
-  );
+  const { setNowPlayingCandidate, setNowPlayingFeed } = useNowPlaying();
+
+  const {
+    innerDrawerHeight,
+    setInnerDrawerHeight,
+    outerDrawerHeight,
+    setOuterDrawerHeight,
+    innerDrawerHeights,
+    outerDrawerHeights,
+  } = useLayout();
 
   function a11yProps(index: number) {
     return {
@@ -100,6 +114,59 @@ export function HalfMapLayout({
     </Tabs>
   );
 
+  const handleInnerDrawerToggle = () => {
+    if (innerDrawerHeight === innerDrawerHeights.min) {
+      setInnerDrawerHeight(innerDrawerHeights.low);
+    } else if (innerDrawerHeight === innerDrawerHeights.low) {
+      setInnerDrawerHeight(innerDrawerHeights.max);
+    } else if (innerDrawerHeight === innerDrawerHeights.max) {
+      setInnerDrawerHeight(innerDrawerHeights.min);
+    }
+  };
+
+  const handleOuterDrawerToggle = () => {
+    console.log("outerDrawerHeight", outerDrawerHeight);
+    if (outerDrawerHeight === outerDrawerHeights.low) {
+      setOuterDrawerHeight(outerDrawerHeights.high);
+    } else if (outerDrawerHeight === outerDrawerHeights.high) {
+      setOuterDrawerHeight(outerDrawerHeights.max);
+    } else if (outerDrawerHeight === outerDrawerHeights.max) {
+      setOuterDrawerHeight(outerDrawerHeights.low);
+    }
+  };
+
+  const DrawerToggle = ({ type }: { type: "inner" | "outer" }) => {
+    return (
+      <div
+        className="drawer-toggle"
+        onClick={
+          type === "inner" ? handleInnerDrawerToggle : handleOuterDrawerToggle
+        }
+        style={{
+          width: "100%",
+          height: "24px",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "16px 0 12px 0",
+        }}
+      >
+        <div
+          style={{
+            width: "40px",
+            height: "4px",
+            background: "white",
+            borderRadius: "100px",
+          }}
+        ></div>
+      </div>
+    );
+  };
+
   return (
     <>
       <Box
@@ -121,153 +188,181 @@ export function HalfMapLayout({
       >
         <HeaderNew tabs={tabs} />
         <Box
-          component="main"
+          className="outer-drawer-container"
           sx={{
-            display: "flex",
-            flexFlow: mdDown ? "column" : "row",
-            flex: 1,
             position: "relative",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
             overflow: "hidden",
           }}
         >
-          {/* // desktop view */}
-          {!mdDown && (
-            <SideList position="left">
-              <CandidatesStack />
-            </SideList>
-          )}
           <Box
-            className="center-column"
+            component="main"
             sx={{
               display: "flex",
-              flexGrow: 1,
+              flexFlow: mdDown ? "column" : "row",
+              flex: 1,
               position: "relative",
-              borderLeft: "1px solid rgba(255,255,255,.5)",
-              height: "100%",
+              overflow: "hidden",
             }}
           >
-            <MapWrapper />
-            <Box
-              className="now-playing-drawer"
-              sx={{
-                px: 0,
-                display: "flex",
-                flexDirection: "column",
-                flex: 1,
-                overflowY: "auto",
+            {/* // desktop view */}
+            {!mdDown && (
+              <>
+                <SideList position="left">
+                  <CandidatesStack />
+                </SideList>
+                <Box
+                  className="center-column"
+                  sx={{
+                    display: "flex",
+                    flexGrow: 1,
+                    position: "relative",
+                    borderLeft: "1px solid rgba(255,255,255,.5)",
+                    height: "100%",
+                  }}
+                >
+                  <MapWrapper />
+                  <Box
+                    className="now-playing-drawer"
+                    sx={{
+                      px: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1,
+                      overflowY: "auto",
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      borderRight: "1px solid rgba(255,255,255,.5)",
+                      height: playbarExpanded
+                        ? `calc(100vh - ${headerHeight})`
+                        : 0,
+                      backgroundColor: "background.default",
+                      zIndex: (theme) => theme.zIndex.drawer + 1,
+                      transition: "height .66s ease",
+                    }}
+                  >
+                    {playbarExpanded && !mdDown && centerDrawer}
+                  </Box>
+                </Box>
+                {!mdDown && (
+                  <SideList position="right">
+                    {rightSlot}
+                    <Box
+                      className="right-slot-drawer"
+                      sx={{
+                        px: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        flex: 1,
+                        overflowY: "auto",
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        borderRight: "1px solid rgba(255,255,255,.5)",
+                        height:
+                          mdDown && playbarExpanded && router.query.candidateId
+                            ? `calc(100vh)` // height calc gets complex on mobile due to browser bar
+                            : playbarExpanded && router.query.candidateId
+                              ? `calc(100vh - ${headerHeight})`
+                              : 0,
+                        backgroundColor: "background.default",
+                        zIndex: (theme) => theme.zIndex.drawer + 1,
+                        transition: "height .66s ease",
+                      }}
+                    >
+                      {rightDrawer}
+                    </Box>
+                  </SideList>
+                )}
+              </>
+            )}
+
+            {/* // mobile view */}
+            {mdDown && (
+              <>
+                <MapWrapper />
+                <Box
+                  className={"inner-drawer"}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: 1,
+                    overflowY: "hidden",
+                    position: "absolute",
+                    top: innerDrawerHeight,
+                    zIndex: 10000,
+                    backgroundColor: "background.default",
+                    width: "100%",
+                    borderRadius:
+                      innerDrawerHeight === innerDrawerHeights.max ? 0 : "24px",
+                    margin: "0 1px",
+                    height: "100%",
+                    transition: "all .66s ease",
+                  }}
+                >
+                  <DrawerToggle type="inner" />
+                  <MobileStack masterPlayerTimeRef={masterPlayerTimeRef} />
+                </Box>
+              </>
+            )}
+          </Box>
+          {/* <Footer masterPlayerTimeRef={masterPlayerTimeRef} /> */}
+          {mdDown && <MobileBottomNav />}
+          {mdDown && (
+            <div
+              className="outer-drawer"
+              style={{
+                width: "100%",
+                height: "100%",
                 position: "absolute",
                 bottom: 0,
                 left: 0,
                 right: 0,
-                borderRight: "1px solid rgba(255,255,255,.5)",
-                height:
-                  mdDown && playbarExpanded
-                    ? `calc(100vh)` // height calc gets complex on mobile due to browser bar
-                    : playbarExpanded
-                      ? `calc(100vh - ${headerHeight})`
-                      : 0,
-                backgroundColor: "background.default",
-                zIndex: (theme) => theme.zIndex.drawer + 1,
-                transition: "height .66s ease",
-              }}
-            >
-              {playbarExpanded && centerSlot}
-            </Box>
-          </Box>
-          {!mdDown && (
-            <SideList position="right">
-              {rightSlot}
-              <Box
-                className="right-slot-drawer"
-                sx={{
-                  px: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  flex: 1,
-                  overflowY: "auto",
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  borderRight: "1px solid rgba(255,255,255,.5)",
-                  height:
-                    mdDown && playbarExpanded && router.query.candidateId
-                      ? `calc(100vh)` // height calc gets complex on mobile due to browser bar
-                      : playbarExpanded && router.query.candidateId
-                        ? `calc(100vh - ${headerHeight})`
-                        : 0,
-                  backgroundColor: "background.default",
-                  zIndex: (theme) => theme.zIndex.drawer + 1,
-                  transition: "height .66s ease",
-                }}
-              >
-                {rightDrawer}
-              </Box>
-            </SideList>
-          )}
-          {/* // mobile view */}
-          {mdDown && (
-            <Box
-              className={"mobile-view"}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                flex: 1,
-                overflowY: "auto",
-                position: "absolute",
-                top: innerDrawerHeight,
-                zIndex: 1000,
-                backgroundColor: "background.default",
-                width: "100%",
+                top: outerDrawerHeight,
+                backgroundColor: darkTheme.palette.background.default,
+                zIndex: 10000,
                 borderRadius:
-                  innerDrawerHeight === innerDrawerHeights.max ? 0 : "24px",
-                margin: "0 1px",
-                height: "100%",
+                  outerDrawerHeight === outerDrawerHeights.max
+                    ? 0
+                    : "24px 24px 0 0",
                 transition: "all .66s ease",
+                paddingTop: "24px",
               }}
             >
-              <div
-                className="drawer-toggle"
+              <DrawerToggle type="outer" />
+              <IconButton
+                aria-label="close"
+                className="candidate-map-close"
                 onClick={() => {
-                  if (innerDrawerHeight === innerDrawerHeights.min) {
-                    setInnerDrawerHeight(innerDrawerHeights.low);
-                  } else if (innerDrawerHeight === innerDrawerHeights.low) {
-                    setInnerDrawerHeight(innerDrawerHeights.max);
-                  } else if (innerDrawerHeight === innerDrawerHeights.max) {
-                    setInnerDrawerHeight(innerDrawerHeights.min);
-                  }
+                  router.push(`/beta`);
+                  setOuterDrawerHeight(outerDrawerHeights.min);
+                  setInnerDrawerHeight(innerDrawerHeights.low);
+                  setNowPlayingCandidate(null);
+                  setLiveSpectrogram(false);
                 }}
-                style={{
-                  width: "100%",
-                  height: "24px",
+                sx={{
                   position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
+                  right: "24px",
+                  top: "30px",
+                  color: (theme) => theme.palette.grey[500],
+                  background: (theme) => theme.palette.grey[800],
+                  zIndex: (theme) => theme.zIndex.drawer + 1,
+                  "&:hover": {
+                    background: (theme) => theme.palette.grey[900],
+                  },
                 }}
               >
-                <div
-                  style={{
-                    width: "40px",
-                    height: "4px",
-                    background: "white",
-                    borderRadius: "100px",
-                  }}
-                ></div>
-              </div>
-              <MobileDisplay
-                masterPlayerTimeRef={masterPlayerTimeRef}
-                setInnerDrawerHeight={setInnerDrawerHeight}
-                innerDrawerHeight={innerDrawerHeight}
-              />
-            </Box>
+                <Close />
+              </IconButton>
+              {outerDrawer}
+            </div>
           )}
         </Box>
-        {/* <Footer masterPlayerTimeRef={masterPlayerTimeRef} /> */}
-        {mdDown && <MobileBottomNav />}
       </Box>
     </>
   );

@@ -133,6 +133,7 @@ function ReportCount({
            display: flex;
            justify-content: center;
            align-items; center;
+           opacity: ${count === 0 ? 0 : 1}
          ">${count}</span><div>`,
       className: "",
       iconSize: [30, 30],
@@ -199,24 +200,26 @@ export default function Map() {
   //   }
   // }, [router.query.feedSlug]);
 
-  const reports = useMemo(() => {
-    // show all reports in filter range for live player view
-    if (nowPlayingFeed) {
-      return filteredData;
-    } else if (nowPlayingCandidate) {
-      // show all reports in candidate range for live player view
-      const startDate = new Date(nowPlayingCandidate.startTimestamp);
-      const endDate = new Date(nowPlayingCandidate.endTimestamp);
-      return filteredData?.filter((d) => {
-        return (
-          startDate <= new Date(d.timestampString) &&
-          endDate >= new Date(d.timestampString)
-        );
-      });
-    } else {
-      return filteredData;
-    }
-  }, [filteredData, nowPlayingCandidate, nowPlayingFeed]);
+  // const reports = useMemo(() => {
+  //   // show all reports in filter range for live player view
+  //   if (nowPlayingFeed) {
+  //     return filteredData;
+  //   } else if (nowPlayingCandidate) {
+  //     // show all reports in candidate range for live player view
+  //     const startDate = new Date(nowPlayingCandidate.startTimestamp);
+  //     const endDate = new Date(nowPlayingCandidate.endTimestamp);
+  //     return filteredData?.filter((d) => {
+  //       return (
+  //         startDate <= new Date(d.timestampString) &&
+  //         endDate >= new Date(d.timestampString)
+  //       );
+  //     });
+  //   } else {
+  //     return filteredData;
+  //   }
+  // }, [filteredData, nowPlayingCandidate, nowPlayingFeed]);
+
+  const reports = filteredData;
   const mdDown = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
 
   const audioReports = useMemo(() => {
@@ -282,7 +285,7 @@ export default function Map() {
         //TODO: Disable attribution on mobile only
         attributionControl={false}
       >
-        {!mdDown && <ZoomControl position="topright" />}
+        <ZoomControl position="topright" />
         <TileLayer
           attribution="Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri"
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
@@ -303,6 +306,7 @@ export default function Map() {
           const sightingsThisFeed = sightings.filter(
             (s) => s.feedId === f?.id,
           ).length;
+          const allReportsThisFeed = audioReportsThisFeed + sightingsThisFeed;
           return (
             <Fragment key={f.slug}>
               {/* // necessary to map circles twice to make them all appear */}
@@ -319,36 +323,26 @@ export default function Map() {
                 }
                 zIndexOffset={100}
               />
-              {audioReportsThisFeed > 0 && (
-                <ReportCount
-                  center={f.latLng}
-                  count={audioReportsThisFeed + sightingsThisFeed}
-                  onClick={() => {
-                    // if (nowPlayingCandidate) {
-                    //   router.push(`/beta/${f.slug}/candidates`);
-                    // } else if (f.id !== nowPlayingFeed?.id) {
-                    //   autoPlayOnReady.current = false;
-                    //   setNowPlayingFeed(f);
-                    //   setNowPlayingCandidate(null);
-                    //   // setPopupFeed(f);
-                    //   // setPopupDetection(null);
-                    // } else {
-                    if (mdDown && f.id === nowPlayingFeed?.id) {
-                      setPlaybarExpanded(true);
-                    } else if (mdDown) {
-                      autoPlayOnReady.current = false;
-                      setNowPlayingFeed(f);
-                      setNowPlayingCandidate(null);
-                    } else {
-                      router.push(`/beta/${f.slug}`);
-                      autoPlayOnReady.current = false;
-                      setNowPlayingFeed(f);
-                      setNowPlayingCandidate(null);
-                    }
-                    // }
-                  }}
-                />
-              )}
+              <ReportCount
+                center={f.latLng}
+                count={allReportsThisFeed}
+                onClick={() => {
+                  // if (nowPlayingCandidate) {
+                  //   router.push(`/beta/${f.slug}/candidates`);
+                  // } else if (f.id !== nowPlayingFeed?.id) {
+                  //   autoPlayOnReady.current = false;
+                  //   setNowPlayingFeed(f);
+                  //   setNowPlayingCandidate(null);
+                  //   // setPopupFeed(f);
+                  //   // setPopupDetection(null);
+                  // } else {
+                  autoPlayOnReady.current = false;
+                  setNowPlayingFeed(f);
+                  setNowPlayingCandidate(null);
+                  router.push(`/beta/${f.slug}`);
+                  // }
+                }}
+              />
             </Fragment>
           );
         })}
@@ -390,6 +384,7 @@ export default function Map() {
                 <div
                   dangerouslySetInnerHTML={{
                     __html: `
+                    <em>Sighting</em> <br />
                   <strong>${sighting.name}</strong><br />
                   ${timeAgo} ago<br />
                   ${sighting.created}<br />

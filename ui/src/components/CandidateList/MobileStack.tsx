@@ -1,6 +1,7 @@
-import { Dispatch, MutableRefObject, useState } from "react";
+import { MutableRefObject, useState } from "react";
 
 import { HydrophonesStack } from "@/components/CandidateList/HydrophonesStack";
+import { useLayout } from "@/context/LayoutContext";
 
 import { MobileContainer } from "../layouts/HalfMapLayout/MobileContainer";
 import { CandidatesStack } from "./CandidatesStack";
@@ -8,14 +9,11 @@ import { MobileTabs } from "./MobileTabs";
 
 type Props = {
   masterPlayerTimeRef?: MutableRefObject<number>;
-  setInnerDrawerHeight: Dispatch<React.SetStateAction<string>>;
-  innerDrawerHeight: string;
 };
 
-export function MobileDisplay({
-  setInnerDrawerHeight,
-  innerDrawerHeight,
-}: Props) {
+export function MobileStack({}: Props) {
+  const { innerDrawerHeight, setInnerDrawerHeight } = useLayout();
+
   // tabValue is the state of the top tabs (Listen Live, Last 7 Days) in <MobileTabs>
   const [tabValue, setTabValue] = useState(0);
 
@@ -38,12 +36,7 @@ export function MobileDisplay({
 
   return (
     <>
-      <MobileTabs
-        tabValue={tabValue}
-        setTabValue={setTabValue}
-        setInnerDrawerHeight={setInnerDrawerHeight}
-        innerDrawerHeight={innerDrawerHeight}
-      />
+      <MobileTabs tabValue={tabValue} setTabValue={setTabValue} />
       {tabValue === 0 && ( // Map
         <MobileContainer>
           <CandidatesStack />

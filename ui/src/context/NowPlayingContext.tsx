@@ -70,6 +70,56 @@ export const NowPlayingProvider = ({
     onPlayerEndRef.current?.();
   }, []);
 
+  // debugging
+  useEffect(() => {
+    const player = masterPlayerRef.current;
+    if (!player) {
+      console.log("[NowPlaying] No player found.");
+      return;
+    }
+
+    const media = player
+      .el()
+      ?.querySelector("video") as HTMLMediaElement | null;
+    if (!media) {
+      console.log("[NowPlaying] No media element found.");
+      return;
+    }
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+      console.log("[NowPlaying] Created new AudioContext.");
+    } else {
+      console.log("[NowPlaying] Reusing existing AudioContext.");
+    }
+
+    const audioContext = audioContextRef.current;
+
+    // Only create MediaElementSourceNode once per media element
+    if (!media.dataset.hasSource) {
+      console.log("[NowPlaying] Creating new MediaElementSourceNode...");
+      const source = audioContext.createMediaElementSource(media);
+      media.dataset.hasSource = "true";
+      console.log(
+        "[NowPlaying] MediaElementSourceNode created and marked on media element.",
+      );
+
+      if (!analyserNodeRef.current) {
+        analyserNodeRef.current = audioContext.createAnalyser();
+        console.log("[NowPlaying] Created new AnalyserNode.");
+      } else {
+        console.log("[NowPlaying] Reusing existing AnalyserNode.");
+      }
+
+      const analyser = analyserNodeRef.current;
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
+      console.log("[NowPlaying] Connected source -> analyser -> destination.");
+    } else {
+      console.log("[NowPlaying] Media element already has a source node.");
+    }
+  }, [nowPlayingFeed, masterPlayerRef.current]);
+
   return (
     <NowPlayingContext.Provider
       value={{

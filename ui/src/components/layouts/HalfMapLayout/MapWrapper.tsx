@@ -1,5 +1,4 @@
-import CloseIcon from "@mui/icons-material/Close";
-import { Box, IconButton, Stack, Theme, useMediaQuery } from "@mui/material";
+import { Box, Stack, Theme, useMediaQuery } from "@mui/material";
 import dynamic from "next/dynamic";
 import React, { useMemo } from "react";
 
@@ -78,10 +77,14 @@ export function MapWrapper({
               color: "primary.main",
             }}
           >
-            {nowPlayingCandidate
+            {
+              timeRangeSelect.find((el) => el.value === filters.timeRange)
+                ?.label
+            }
+            {/* {nowPlayingCandidate
               ? timeAgoString + " ago"
               : timeRangeSelect.find((el) => el.value === filters.timeRange)
-                  ?.label}
+                  ?.label} */}
           </Box>
         </Stack>
         {/* {nowPlayingCandidate && (
@@ -92,7 +95,7 @@ export function MapWrapper({
         )} */}
       </Box>
 
-      {mdDown && nowPlayingCandidate && (
+      {/* {mdDown && nowPlayingCandidate && (
         <IconButton
           aria-label="close"
           className="candidate-map-close"
@@ -115,7 +118,7 @@ export function MapWrapper({
         >
           <CloseIcon />
         </IconButton>
-      )}
+      )} */}
       <MapWithNoSSR
       // key={router.pathname}
       />

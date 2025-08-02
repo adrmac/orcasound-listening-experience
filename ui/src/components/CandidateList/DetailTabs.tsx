@@ -11,14 +11,18 @@ import {
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { ReactNode } from "react";
+import { ReactElement, ReactNode } from "react";
 
 import { useData } from "@/context/DataContext";
 import { useLayout } from "@/context/LayoutContext";
 import { useNowPlaying } from "@/context/NowPlayingContext";
 import darkTheme from "@/styles/darkTheme";
+import { countString } from "@/utils/countString";
+import { standardizeFeedName } from "@/utils/masterDataHelpers";
 
+import AudioVisualizer from "../PlayBar/AudioVisualizer";
 import LivePlayer from "../PlayBar/LivePlayer";
+import ReportsBarChart from "./ReportsBarChart";
 
 const hosts = [
   {
@@ -59,12 +63,16 @@ const DetailTabs = ({
   drawer = false,
   showHeading = true,
   showTabs = true,
+  showChart = true,
+  audioVisualizer,
 }: {
   children: ReactNode;
   tabs?: Tab[];
   drawer?: boolean;
   showHeading?: boolean;
   showTabs?: boolean;
+  showChart?: boolean;
+  audioVisualizer?: ReactElement;
 }) => {
   const router = useRouter();
   const { feedSlug } = router.query;
@@ -72,12 +80,15 @@ const DetailTabs = ({
 
   // const mdDown = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
   const theme = useTheme();
-  const { setNowPlayingCandidate, setNowPlayingFeed } = useNowPlaying();
-  const { setPlaybarExpanded } = useLayout();
+  const { setNowPlayingCandidate, setNowPlayingFeed, masterPlayerStatus } =
+    useNowPlaying();
+  const { setPlaybarExpanded, liveSpectrogram } = useLayout();
   const { feeds } = useData();
 
   const feed = feeds.find((feed) => feed.slug === feedSlug);
   const host = hosts.find((host) => feedSlug === host.hydrophone);
+
+  const { filters, filteredData } = useData();
 
   // const isCandidateDetail =
   //   !!router.query.feedSlug && !!router.query.candidateId;
@@ -94,6 +105,12 @@ const DetailTabs = ({
   const isCandidatePage = route[route.length - 1] === "[candidateId]";
 
   const { nowPlayingFeed } = useNowPlaying();
+
+  const detections = feed
+    ? filteredData.filter(
+        (c) => c.hydrophone === standardizeFeedName(feed?.name),
+      )
+    : filteredData;
 
   const tabRow = (tabs: Tab[]) => (
     <Stack
@@ -142,25 +159,31 @@ const DetailTabs = ({
             flexDirection: "column",
             justifyContent: "space-between",
             gap: "16px",
-            background: `center / cover no-repeat url(${feed?.imageUrl})`,
+            background: mdDown
+              ? "none"
+              : `center / cover no-repeat url(${feed?.imageUrl})`,
             px: 3,
-            py: 2,
-            minHeight: mdDown ? " 160px" : "260px",
+            py: mdDown ? 1 : 2,
+            minHeight: mdDown ? 0 : "260px",
           }}
         >
           {/* Gradient overlay */}
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(to top, rgba(0,0,0,0.33), rgba(0,0,0,0))",
-              zIndex: 0,
-            }}
-          />
-          {!drawer ? (
+          {!mdDown && (
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(to top, rgba(0,0,0,0.33), rgba(0,0,0,0))",
+                zIndex: 0,
+              }}
+            />
+          )}
+          {/* Back button */}
+
+          {!mdDown && (
             <Link
-              href={mdDown ? "#" : href}
+              href={"/beta"}
               onClick={(e) => {
                 if (mdDown) {
                   e.preventDefault();
@@ -183,8 +206,6 @@ const DetailTabs = ({
             >
               <ArrowBackIos />
             </Link>
-          ) : (
-            <Box></Box>
           )}
           <Box
             sx={{
@@ -209,36 +230,82 @@ const DetailTabs = ({
           </Box>
         </Box>
       )}
-      <Box
-        sx={{
-          m: 2,
-        }}
-      >
-        {nowPlayingFeed && <LivePlayer currentFeed={nowPlayingFeed} />}
-      </Box>
-      {host && (
-        <Paper
-          elevation={0}
+      <Box className="scroll-box">
+        {nowPlayingFeed && (
+          <Box
+            sx={{
+              m: 2,
+              mt: mdDown ? 1 : 2,
+              mb: mdDown ? 3 : 2,
+            }}
+          >
+            <LivePlayer currentFeed={nowPlayingFeed} />
+          </Box>
+        )}
+        <Box
           sx={{
-            backgroundColor: "accent1.main",
-            p: 2,
-            mx: 2,
-            my: 1,
-            borderRadius: 1,
+            height: liveSpectrogram ? "unset" : 0,
+            overflow: "hidden",
+            transition: "all .66s ease",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <Typography variant="body2">
-            Hosted by <strong>{host.name}</strong>
-            <br />
-            <Link href={host.link} target="_blank" rel="noopener">
-              Learn more or donate
-            </Link>{" "}
-            to support their work.
-          </Typography>
-        </Paper>
-      )}
-      {showTabs && tabs && tabRow(tabs)}
-      <Box>{children}</Box>
+          <AudioVisualizer />
+        </Box>
+        <Box
+          className="feed-chart"
+          sx={{
+            px: "24px",
+          }}
+        >
+          {showChart && (
+            <Stack className="chart-heading" gap={0.5} sx={{ mt: 1 }}>
+              {/* <Typography component="h2" variant="h6">
+                {
+                  timeRangeSelect.find((el) => el.value === filters.timeRange)
+                    ?.label
+                }
+              </Typography> */}
+              {countString(detections)}
+            </Stack>
+          )}
+          {showChart && (
+            <Box sx={{ py: "1.5rem" }}>
+              <ReportsBarChart
+                showLegend={false}
+                showYAxis={false}
+                showXAxis={false}
+                feed={feed}
+              />
+            </Box>
+          )}
+        </Box>
+        {/* host block */}
+        {host && !mdDown && (
+          <Paper
+            elevation={0}
+            sx={{
+              backgroundColor: "accent1.main",
+              p: 2,
+              mx: 2,
+              my: 1,
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="body2">
+              Hosted by <strong>{host.name}</strong>
+              <br />
+              <Link href={host.link} target="_blank" rel="noopener">
+                Learn more or donate
+              </Link>{" "}
+              to support their work.
+            </Typography>
+          </Paper>
+        )}
+        {showTabs && tabs && tabRow(tabs)}
+        <Box>{children}</Box>
+      </Box>
     </div>
   );
 };

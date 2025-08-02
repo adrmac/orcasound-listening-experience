@@ -3,14 +3,17 @@ import {
   Box,
   CircularProgress,
   Stack,
+  Theme,
   Tooltip,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import VideoJS, { type VideoJSPlayer } from "@/components/Player/VideoJS";
 import { useData } from "@/context/DataContext";
-import { useLayout } from "@/context/LayoutContext";
+import { outerDrawerHeights, useLayout } from "@/context/LayoutContext";
 import { useNowPlaying } from "@/context/NowPlayingContext";
 import type { Feed } from "@/graphql/generated";
 import useFeedPresence from "@/hooks/useFeedPresence";
@@ -40,6 +43,8 @@ export default function LivePlayer({
   //   | "bucket"
   // >;
 }) {
+  const mdDown = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
+  const router = useRouter();
   const {
     masterPlayerRef,
     masterPlayerStatus,
@@ -52,7 +57,8 @@ export default function LivePlayer({
   const { autoPlayOnReady } = useData();
   const [playerStatus, setPlayerStatus] = useState<PlayerStatus>("idle");
   const playerRef = useRef<VideoJSPlayer | null>(null);
-  const { setPlaybarExpanded } = useLayout();
+  const { setPlaybarExpanded, setOuterDrawerHeight, setLiveSpectrogram } =
+    useLayout();
 
   const { timestamp, hlsURI } = useTimestampFetcher(
     currentFeed?.bucket,
@@ -177,7 +183,11 @@ export default function LivePlayer({
 
     setNowPlayingFeed(currentFeed);
     setNowPlayingCandidate(null);
-    if (playerStatus !== "playing") setPlaybarExpanded(true);
+    if (playerStatus !== "playing" && !mdDown) setPlaybarExpanded(true);
+    if (playerStatus !== "playing" && mdDown) {
+      setOuterDrawerHeight(outerDrawerHeights.max);
+    }
+    setLiveSpectrogram(true);
 
     if (playerStatus === "error") {
       setPlayerStatus("idle");
@@ -279,7 +289,6 @@ export default function LivePlayer({
         style={{ display: "flex", gap: "16px", marginLeft: "4px" }}
       >
         {playPause}
-        {/* {!active || masterPlayerStatus !== "playing" ? playIcon : pauseIcon} */}
         <Stack
           className="live-player-text"
           sx={{

@@ -1,5 +1,6 @@
 import { KeyboardArrowDown } from "@mui/icons-material";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Theme, useMediaQuery } from "@mui/material";
+import { useRouter } from "next/router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useLayout } from "@/context/LayoutContext";
@@ -30,6 +31,8 @@ const getFrequencyData = (analyser: AnalyserNode): Uint8Array | null => {
 };
 
 function AudioVisualizer() {
+  const mdDown = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
+  const router = useRouter();
   const {
     analyserNodeRef,
     masterPlayerRef,
@@ -64,55 +67,78 @@ function AudioVisualizer() {
 
   const isSilent = (data: Uint8Array) => data.every((val) => val === 0);
 
+  const [readyToDraw, setReadyToDraw] = useState(false);
+
+  useEffect(() => {
+    console.log("Visualizer feed update:", nowPlayingFeed?.slug);
+  }, [nowPlayingFeed?.slug]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const analyser = analyserNodeRef.current;
+      const spectrogramCtx = spectrogramRef.current?.getContext("2d");
+      const waveformCtx = waveformRef.current?.getContext("2d");
+
+      if (analyser && spectrogramCtx && waveformCtx) {
+        console.log("All components ready for drawing");
+        setReadyToDraw(true);
+        clearInterval(interval);
+      }
+    }, 100); // Check every 100ms
+
+    return () => clearInterval(interval);
+  }, [analyserNodeRef]);
+
+  useEffect(() => {
+    const analyser = analyserNodeRef.current;
+    console.log("this ran!!!!!!!!!!!!!!!!!!", analyser);
+    if (!analyser) return;
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    let frameId: number;
+
+    const test = () => {
+      analyser.getByteTimeDomainData(dataArray);
+      const avg =
+        dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
+      console.log("Avg volume", avg); // Should vary if audio is coming through
+      frameId = requestAnimationFrame(test);
+    };
+
+    test();
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, [nowPlayingFeed]);
+
   useEffect(() => {
     const analyser = analyserNodeRef.current;
     const spectrogramCtx = spectrogramRef.current?.getContext("2d");
     const waveformCtx = waveformRef.current?.getContext("2d");
-    if (!spectrogramCtx || !waveformCtx || !analyser) return;
 
-    function drawFrequencyTicks(ctx: CanvasRenderingContext2D) {
-      ctx.save();
-      ctx.fillStyle = "#ccc";
-      ctx.font = "10px sans-serif";
-      ctx.textAlign = "right";
-
-      const numTicks = 5;
-      for (let i = 0; i <= numTicks; i++) {
-        const fraction = i / numTicks;
-        const freq = fraction * 22050; // Assuming 44.1kHz sample rate
-
-        const y =
-          selectedScale === "log"
-            ? heightSpectrogram -
-              Math.log10(1 + 9 * fraction) * heightSpectrogram
-            : heightSpectrogram - fraction * heightSpectrogram;
-
-        ctx.fillText(`${Math.round(freq)} Hz`, 40, y);
-      }
-
-      ctx.restore();
+    if (!spectrogramCtx || !waveformCtx || !analyser || !readyToDraw) {
+      return;
     }
+    console.log("analyser after feedSlug change", analyser);
+    console.log("analyser source count", analyser?.numberOfInputs);
+
+    console.log("🎨 Starting draw loop for feedSlug:", router.query.feedSlug);
 
     const draw = () => {
+      // spectrogramCtx?.clearRect(0, 0, width, heightSpectrogram);
+      // waveformCtx?.clearRect(0, 0, width, heightWaveform);
+
       const freqData = getFrequencyData(analyser);
       const waveData = getWaveformData(analyser);
 
       const audioActive =
         freqData && waveData && !isSilent(freqData) && !isSilent(waveData);
 
-      // const currentAudioTime = getCurrentTime ? getCurrentTime() : 0;
-      // const lastAudioTime = lastAudioTimeRef.current;
-      // const deltaTime = Math.max(currentAudioTime - lastAudioTime, 0.001); // prevent divide by 0
-      // lastAudioTimeRef.current = currentAudioTime;
-
-      // const pixelsPerSecond = 1 / deltaTime;
-
       if (!audioActive) {
         animationRef.current = requestAnimationFrame(draw);
         return;
       }
-
-      const freqLen = freqData.length;
 
       // === SPECTROGRAM ===
       const imageDataSpec = spectrogramCtx.getImageData(
@@ -124,23 +150,19 @@ function AudioVisualizer() {
       spectrogramCtx.putImageData(imageDataSpec, 0, 0);
       spectrogramCtx.clearRect(width - 1, 0, 1, heightSpectrogram);
 
-      // drawFrequencyTicks(spectrogramCtx);
-      // drawTimeTicks(spectrogramCtx, pixelsPerSecond);
-
       for (let y = 0; y < heightSpectrogram; y++) {
         let index = 0;
+        const norm = y / heightSpectrogram;
 
         if (selectedScale === "log") {
-          const norm = y / heightSpectrogram;
           const logIndex = (Math.pow(10, norm * 1) - 1) / 9;
-          index = logIndex * (freqLen - 1);
+          index = logIndex * (freqData.length - 1);
         } else {
-          const norm = y / heightSpectrogram;
-          index = norm * (freqLen - 1);
+          index = norm * (freqData.length - 1);
         }
 
         const i0 = Math.floor(index);
-        const i1 = Math.min(i0 + 1, freqLen - 1);
+        const i1 = Math.min(i0 + 1, freqData.length - 1);
         const t = index - i0;
 
         const interpolated = freqData[i0] * (1 - t) + freqData[i1] * t;
@@ -180,17 +202,26 @@ function AudioVisualizer() {
       animationRef.current = requestAnimationFrame(draw);
     };
 
-    animationRef.current = requestAnimationFrame(draw);
+    draw();
 
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+        console.log("🛑 Stopped draw loop on feedSlug change");
+        spectrogramCtx?.clearRect(0, 0, width, heightSpectrogram);
+        waveformCtx?.clearRect(0, 0, width, heightWaveform);
+      }
     };
-  }, [
-    colorMap,
-    selectedScale,
-    analyserNodeRef,
-    // getCurrentTime,
-  ]);
+  }, [colorMap, selectedScale, readyToDraw, router.query.feedSlug]);
+
+  useEffect(() => {
+    const spectrogramCtx = spectrogramRef.current?.getContext("2d");
+    const waveformCtx = waveformRef.current?.getContext("2d");
+
+    spectrogramCtx?.clearRect(0, 0, width, heightSpectrogram);
+    waveformCtx?.clearRect(0, 0, width, heightWaveform);
+  }, [router.query.feedSlug]);
 
   return (
     <div
@@ -244,15 +275,17 @@ function AudioVisualizer() {
             </select>
           </label>
         </div>
-        <Button
-          size="small"
-          endIcon={<KeyboardArrowDown />}
-          onClick={() => {
-            setPlaybarExpanded(false);
-          }}
-        >
-          Show map
-        </Button>
+        {!mdDown && (
+          <Button
+            size="small"
+            endIcon={<KeyboardArrowDown />}
+            onClick={() => {
+              setPlaybarExpanded(false);
+            }}
+          >
+            Close visualizer
+          </Button>
+        )}
       </Box>
       <canvas
         ref={waveformRef}
@@ -266,19 +299,30 @@ function AudioVisualizer() {
         height={heightSpectrogram}
         style={{ width: "100%", flex: 1 }}
       />
-      <WaveformCanvas analyser={analyserNodeRef.current} />
-      <SpectrogramCanvas analyser={analyserNodeRef.current} />
+      <WaveformCanvas
+        analyser={analyserNodeRef.current}
+        // key={`${nowPlayingFeed?.slug}-wf-${mdDown}`}
+      />
+      <SpectrogramCanvas
+        analyser={analyserNodeRef.current}
+        // key={`${nowPlayingFeed?.slug}-sp-${mdDown}`}
+      />
       <div
         style={{
-          height: "150px",
+          height: mdDown ? "unset" : "150px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          padding: "24px 24px",
+          flex: 1,
         }}
       >
         <div
           className="detection-button"
-          style={{ width: "66%", height: "35%" }}
+          style={{
+            width: mdDown ? "100%" : "66%",
+            height: "48px",
+          }}
         >
           {(masterPlayerStatus === "playing" ||
             masterPlayerStatus === "loading") &&
@@ -293,6 +337,9 @@ function AudioVisualizer() {
                 <DetectionButton />
               </DetectionDialog>
             )}
+          {masterPlayerStatus !== "playing" && (
+            <DetectionButton disabled={true} />
+          )}
         </div>
       </div>
     </div>

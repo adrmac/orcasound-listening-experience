@@ -39,15 +39,18 @@ export default function DetectionButton({
           justifyContent: "center",
           alignItems: "center",
           width: "100%",
+          gap: "16px",
         }}
       >
-        <GraphicEq
-          sx={{
-            mr: mdDown ? 0 : 1,
-            color: disabled ? "rgba(255,255,255,.5)" : "base.main",
-          }}
-        />
-        {!mdDown && "Report sound"}
+        {!disabled && (
+          <GraphicEq
+            sx={{
+              mr: mdDown ? 0 : 1,
+              color: disabled ? "rgba(255,255,255,.5)" : "base.main",
+            }}
+          />
+        )}
+        {disabled ? "Start player to make a report" : "Report sound"}
       </Box>
     </Fab>
   );

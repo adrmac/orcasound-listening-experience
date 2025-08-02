@@ -104,12 +104,12 @@ export default function CandidateCard(props: { candidate: Candidate }) {
     autoPlayOnReady.current = true;
     setNowPlayingCandidate(candidate);
     setNowPlayingFeed(null);
-    if (!mdDown) router.push(href);
+    router.push(href);
 
-    const player = masterPlayerRef?.current;
-    if (player && player !== null && typeof player.play === "function") {
-      player.play();
-    }
+    // const player = masterPlayerRef?.current;
+    // if (player && player !== null && typeof player.play === "function") {
+    //   player.play();
+    // }
   };
 
   const handlePause = () => {

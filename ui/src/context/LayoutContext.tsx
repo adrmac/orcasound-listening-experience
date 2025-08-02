@@ -8,6 +8,13 @@ import {
   useState,
 } from "react";
 
+type DrawerHeights = {
+  min: string;
+  low: string;
+  high: string;
+  max: string;
+};
+
 type LayoutContextType = {
   alertOpen: boolean;
   setAlertOpen: Dispatch<SetStateAction<boolean>>;
@@ -19,6 +26,14 @@ type LayoutContextType = {
   setMobileTab: Dispatch<SetStateAction<number>>;
   candidatePreview: boolean;
   setCandidatePreview: Dispatch<SetStateAction<boolean>>;
+  innerDrawerHeight: string;
+  setInnerDrawerHeight: Dispatch<SetStateAction<string>>;
+  outerDrawerHeight: string;
+  setOuterDrawerHeight: Dispatch<SetStateAction<string>>;
+  innerDrawerHeights: DrawerHeights;
+  outerDrawerHeights: DrawerHeights;
+  liveSpectrogram: boolean;
+  setLiveSpectrogram: Dispatch<SetStateAction<boolean>>;
 };
 
 const LayoutContext = createContext<LayoutContextType | null>(null);
@@ -27,6 +42,20 @@ const alertHeight = "36px";
 const desktopHeaderHeight = "64px";
 const mobileHeaderHeight = "60px";
 const mobileMenuHeight = "69px";
+
+export const innerDrawerHeights = {
+  min: "calc(100% - 72px)",
+  low: "calc(100% - 267px)",
+  high: "72px",
+  max: "0px",
+};
+
+export const outerDrawerHeights = {
+  min: "100%",
+  low: "50%",
+  high: "72px",
+  max: "0px",
+};
 
 export const LayoutProvider = ({ children }: { children: React.ReactNode }) => {
   const [alertOpen, setAlertOpen] = useState<boolean>(true);
@@ -39,6 +68,15 @@ export const LayoutProvider = ({ children }: { children: React.ReactNode }) => {
     : noAlertHeight;
 
   const [playbarExpanded, setPlaybarExpanded] = useState(false);
+
+  const [innerDrawerHeight, setInnerDrawerHeight] = useState(
+    innerDrawerHeights.min,
+  );
+  const [outerDrawerHeight, setOuterDrawerHeight] = useState(
+    outerDrawerHeights.min,
+  );
+
+  const [liveSpectrogram, setLiveSpectrogram] = useState(false);
 
   const [candidatePreview, setCandidatePreview] = useState(true);
 
@@ -58,6 +96,14 @@ export const LayoutProvider = ({ children }: { children: React.ReactNode }) => {
         setMobileTab,
         candidatePreview,
         setCandidatePreview,
+        innerDrawerHeight,
+        setInnerDrawerHeight,
+        outerDrawerHeight,
+        setOuterDrawerHeight,
+        innerDrawerHeights,
+        outerDrawerHeights,
+        setLiveSpectrogram,
+        liveSpectrogram,
       }}
     >
       {children}
